@@ -1,15 +1,1295 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lancaster University Ghana – Library System</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>University Library System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.prod.js"></script>
+  <style>
+    :root {
+      --green-dark: #1a3d2b;
+      --green-mid: #2d5a3d;
+      --green-light: #3a7a52;
+      --gold: #c9a84c;
+      --gold-light: #e8c96a;
+      --gold-pale: #f5eed8;
+      --cream: #faf8f3;
+      --white: #ffffff;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-400: #9ca3af;
+      --gray-500: #6b7280;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --red: #dc2626;
+      --red-light: #fee2e2;
+      --green-ok: #16a34a;
+      --green-ok-light: #dcfce7;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-lg: 20px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 24px rgba(0,0,0,0.10);
+      --shadow-lg: 0 8px 40px rgba(0,0,0,0.14);
+      --transition: 0.2s ease;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: #000000;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3 { font-family: 'Playfair Display', serif; color: #000000; }
+    a { text-decoration: none; color: inherit; }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+    input, select, textarea { font-family: inherit; color: #000000; }
+
+    /* Global input/select/textarea styling */
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea {
+      padding: 11px 14px;
+      border-radius: var(--radius-sm);
+      border: 2px solid var(--gray-200);
+      font-size: 0.9rem;
+      color: #000000;
+      background: var(--white);
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      width: 100%;
+    }
+    input:not([type="checkbox"]):not([type="radio"]):focus,
+    select:focus,
+    textarea:focus {
+      border-color: var(--green-dark);
+      box-shadow: 0 0 0 3px rgba(26,61,43,0.12);
+      background: #fff;
+    }
+    input::placeholder,
+    textarea::placeholder { color: var(--gray-400); }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px; border-radius: var(--radius);
+      font-size: 0.9rem; font-weight: 600;
+      transition: all var(--transition); cursor: pointer; border: none;
+    }
+    .btn-primary { background: var(--green-dark); color: #ffffff; }
+    .btn-primary:hover { background: var(--green-mid); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn-gold { background: var(--gold); color: #ffffff; }
+    .btn-gold:hover { background: var(--gold-light); transform: translateY(-1px); }
+    .btn-outline { background: transparent; color: var(--gold); border: 1.5px solid var(--gold); }
+    .btn-outline:hover { background: var(--gold-pale); }
+
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em;
+    }
+    .badge-green { background: var(--green-ok-light); color: var(--green-ok); }
+    .badge-red { background: var(--red-light); color: var(--red); }
+    .badge-gold { background: var(--gold-pale); color: var(--gold); border: 1px solid var(--gold); }
+    .badge-gray { background: var(--gray-100); color: var(--gray-500); }
+
+    .card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .page-container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+    .fade-enter-active, .fade-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; }
+    .fade-enter-from { opacity: 0; transform: translateY(6px); }
+    .fade-leave-to { opacity: 0; }
+
+    /* ===== NAVBAR ===== */
+    .navbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: var(--white); border-bottom: 1px solid var(--gray-200);
+      height: 72px; box-shadow: 0 1px 12px rgba(0,0,0,0.06);
+    }
+    .navbar-inner { height: 72px; display: flex; align-items: center; gap: 32px; }
+    .brand { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    .brand-icon {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: var(--green-dark); color: white;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .brand-text { display: flex; flex-direction: column; }
+    .brand-name { font-family: 'Playfair Display', serif; font-size: 0.95rem; font-weight: 700; color: #000000; line-height: 1.2; }
+    .brand-sub { font-size: 0.72rem; color: var(--gray-500); font-weight: 400; }
+    .nav-links { display: flex; align-items: center; gap: 4px; flex: 1; }
+    .nav-link {
+      padding: 7px 14px; border-radius: 8px;
+      font-size: 0.875rem; font-weight: 500; color: var(--gray-500);
+      transition: all var(--transition);
+    }
+    .nav-link:hover { color: var(--green-dark); background: var(--gray-100); }
+    .nav-link.router-link-active { color: var(--green-dark); background: var(--green-ok-light); font-weight: 600; }
+    .nav-link--gold.router-link-active { color: var(--gold); background: var(--gold-pale); }
+    .nav-right { margin-left: auto; }
+    .user-pill {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--gray-50); border: 1px solid var(--gray-200);
+      border-radius: 40px; padding: 6px 14px 6px 6px;
+    }
+    .avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--green-dark); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 700;
+    }
+    .user-name { font-size: 0.875rem; font-weight: 500; color: #000000; }
+    .logout-btn { color: var(--gray-400); display: flex; align-items: center; padding: 2px; border-radius: 4px; transition: color var(--transition); }
+    .logout-btn:hover { color: var(--red); }
+
+    /* ===== LOGIN ===== */
+    .login-page {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      position: relative; padding: 24px;
+    }
+    .login-bg { position: fixed; inset: 0; background: linear-gradient(135deg, var(--green-dark) 0%, #0f2619 100%); z-index: 0; }
+    .bg-pattern {
+      position: absolute; inset: 0;
+      background-image: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.04) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(201,168,76,0.08) 0%, transparent 50%);
+    }
+    .login-card {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 440px; padding: 48px 40px;
+      animation: slideUp 0.4s ease;
+    }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .login-logo { text-align: center; margin-bottom: 36px; }
+    .logo-circle {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--green-dark);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px; box-shadow: 0 4px 20px rgba(26,61,43,0.3);
+    }
+    .login-logo h1 { font-size: 1.1rem; font-weight: 700; color: #000000; margin-bottom: 4px; }
+    .login-logo p { font-size: 0.875rem; color: var(--gray-500); }
+    .login-form { display: flex; flex-direction: column; gap: 20px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 0.875rem; font-weight: 600; color: #000000; }
+    .field input {
+      padding: 11px 14px; border-radius: var(--radius-sm);
+      border: 2px solid var(--gray-200);
+      font-size: 0.9rem; color: #000000;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      outline: none; background: var(--gray-50);
+    }
+    .field input:focus { border-color: var(--green-dark); box-shadow: 0 0 0 3px rgba(26,61,43,0.12); background: white; }
+    .field-hint { font-size: 0.75rem; color: var(--gray-400); line-height: 1.4; }
+    .password-wrapper { position: relative; }
+    .password-wrapper input { width: 100%; padding-right: 44px; }
+    .toggle-pass {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--gray-400); display: flex; align-items: center; transition: color var(--transition);
+    }
+    .toggle-pass:hover { color: var(--green-dark); }
+    .login-btn, .create-btn { width: 100%; justify-content: center; padding: 13px; }
+    .login-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+    .error-banner {
+      background: var(--red-light); color: var(--red);
+      padding: 10px 14px; border-radius: var(--radius-sm);
+      font-size: 0.875rem; font-weight: 500;
+    }
+    .help-text { text-align: center; margin-top: 24px; font-size: 0.8rem; color: var(--gray-400); }
+    .help-text a { color: var(--green-dark); font-weight: 500; }
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200; padding: 24px;
+    }
+    .modal { width: 100%; max-width: 420px; padding: 36px; animation: slideUp 0.3s ease; }
+    .modal h2 { margin-bottom: 4px; font-size: 1.4rem; color: #000000; }
+    .modal-sub { color: var(--gray-500); font-size: 0.875rem; margin-bottom: 24px; }
+    .modal form { display: flex; flex-direction: column; gap: 16px; }
+    .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 8px; }
+
+    /* ===== DASHBOARD ===== */
+    .main-layout { padding-top: 72px; }
+    .dashboard { padding: 32px 0 48px; }
+    .dash-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
+    .dash-header h1 { font-size: 1.8rem; color: #000000; margin-bottom: 4px; }
+    .dash-sub { color: var(--gray-500); font-size: 0.9rem; }
+    .dash-date { font-size: 0.82rem; color: #000000; background: var(--white); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--gray-200); }
+    .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .action-card {
+      background: var(--white); border: 1.5px solid var(--gray-200);
+      border-radius: var(--radius); padding: 24px 16px;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      font-size: 0.875rem; font-weight: 600; color: #000000;
+      transition: all var(--transition); text-align: center;
+    }
+    .action-card:hover { border-color: var(--green-dark); color: var(--green-dark); transform: translateY(-2px); box-shadow: var(--shadow); }
+    .action-card--primary { background: var(--green-dark); color: white; border-color: var(--green-dark); }
+    .action-card--primary:hover { background: var(--green-mid); color: white; }
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--white); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+    .stat-card--warn { border-left: 3px solid var(--red); }
+    .stat-content { display: flex; justify-content: space-between; align-items: center; }
+    .stat-label { font-size: 0.8rem; color: var(--gray-500); margin-bottom: 6px; font-weight: 500; }
+    .stat-value { font-size: 1.8rem; font-weight: 700; color: #000000; }
+    .stat-value--red { color: var(--red); }
+    .stat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+    .stat-icon--blue { background: #eff6ff; color: #3b82f6; }
+    .stat-icon--red { background: var(--red-light); color: var(--red); }
+    .stat-icon--gold { background: var(--gold-pale); color: var(--gold); }
+    .stat-icon--green { background: var(--green-ok-light); color: var(--green-ok); }
+    .alert-banner {
+      background: var(--red-light); border: 1px solid #fca5a5;
+      border-radius: var(--radius); padding: 16px 20px;
+      display: flex; align-items: center; gap: 14px; color: var(--red); margin-bottom: 24px;
+    }
+    .alert-banner svg { flex-shrink: 0; }
+    .alert-banner div { flex: 1; font-size: 0.875rem; }
+    .alert-banner strong { display: block; margin-bottom: 2px; }
+    .btn-sm-a { padding: 7px 14px; font-size: 0.8rem; border-radius: 8px; flex-shrink: 0; }
+    .section { margin-bottom: 32px; }
+    .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .section-header h2 { font-size: 1.3rem; color: #000000; }
+    .loans-list { display: flex; flex-direction: column; gap: 12px; }
+    .loan-item { display: flex; align-items: center; gap: 16px; padding: 16px 20px; }
+    .loan-cover {
+      width: 48px; height: 48px; border-radius: 10px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--green-dark), var(--green-light));
+      display: flex; align-items: center; justify-content: center;
+    }
+    .loan-info { flex: 1; }
+    .loan-title { font-weight: 600; font-size: 0.95rem; color: #000000; margin-bottom: 2px; }
+    .loan-author { font-size: 0.8rem; color: var(--gray-500); }
+    .loan-meta { display: flex; align-items: center; gap: 20px; }
+    .loan-date, .loan-fine { display: flex; flex-direction: column; align-items: flex-end; }
+    .meta-label { font-size: 0.72rem; color: var(--gray-400); margin-bottom: 2px; }
+    .meta-val { font-size: 0.875rem; font-weight: 600; color: #000000; }
+    .text-red { color: var(--red); }
+    .empty-state { text-align: center; padding: 48px; background: var(--white); border-radius: var(--radius); }
+    .empty-state p { color: var(--gray-500); margin-bottom: 16px; }
+    .announcements { display: flex; flex-direction: column; background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+    .announcement-item { display: flex; gap: 16px; padding: 20px 24px; border-bottom: 1px solid var(--gray-100); }
+    .announcement-item:last-child { border-bottom: none; }
+    .ann-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+    .ann-dot--gold { background: var(--gold); }
+    .ann-dot--green { background: var(--green-ok); }
+    .ann-dot--blue { background: #3b82f6; }
+    .ann-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 4px; color: #000000; }
+    .ann-body { font-size: 0.82rem; color: var(--gray-500); line-height: 1.5; margin-bottom: 6px; }
+    .ann-date { font-size: 0.72rem; color: var(--gray-400); }
+
+    /* ===== SEARCH PAGE ===== */
+    .search-page { padding: 32px 0 48px; }
+    .search-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .search-header h1 { font-size: 1.6rem; color: #000000; margin-bottom: 2px; }
+    .search-header p { color: var(--gray-500); font-size: 0.875rem; }
+    .back-btn { display: flex; align-items: center; gap: 6px; color: var(--gray-500); font-size: 0.875rem; font-weight: 500; padding: 8px 12px; border-radius: 8px; transition: all var(--transition); }
+    .back-btn:hover { background: var(--gray-100); color: #000000; }
+    .search-box { padding: 20px 24px; margin-bottom: 24px; }
+    .search-input-wrap {
+      display: flex; align-items: center; gap: 12px;
+      border: 2px solid var(--gray-200); border-radius: var(--radius-sm);
+      padding: 12px 16px; margin-bottom: 16px; background: var(--gray-50);
+      transition: border-color var(--transition);
+    }
+    .search-input-wrap:focus-within { border-color: var(--green-dark); background: white; box-shadow: 0 0 0 3px rgba(26,61,43,0.08); }
+    .search-input-wrap input {
+      flex: 1; border: none; outline: none; font-size: 0.95rem;
+      background: transparent; color: #000000; padding: 0; box-shadow: none;
+    }
+    .clear-btn { color: var(--gray-400); display: flex; align-items: center; }
+    .clear-btn:hover { color: #000000; }
+    .filters { display: flex; align-items: center; justify-content: space-between; }
+    .filter-group { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .filter-group svg, .filter-group span { color: var(--gray-500); font-size: 0.875rem; }
+    .select-wrap select {
+      padding: 8px 12px; border-radius: 8px; border: 2px solid var(--gray-200);
+      font-size: 0.85rem; font-family: inherit; color: #000000;
+      background: white; cursor: pointer; outline: none; width: auto;
+    }
+    .select-wrap select:focus { border-color: var(--green-dark); box-shadow: 0 0 0 3px rgba(26,61,43,0.08); }
+    .author-filter {
+      padding: 8px 12px; border-radius: 8px; border: 2px solid var(--gray-200);
+      font-size: 0.85rem; font-family: inherit; outline: none; width: 180px;
+    }
+    .author-filter:focus { border-color: var(--green-dark); box-shadow: 0 0 0 3px rgba(26,61,43,0.08); }
+    .books-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .empty { text-align: center; padding: 64px 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .empty p { color: var(--gray-500); }
+    .results-count { font-size: 0.82rem; }
+
+    /* ===== BOOK CARD ===== */
+    .book-card {
+      background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow);
+      overflow: hidden; cursor: pointer; transition: all 0.25s ease;
+      display: flex; flex-direction: column;
+    }
+    .book-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+    .book-cover {
+      background: linear-gradient(135deg, var(--green-dark) 0%, var(--green-light) 100%);
+      height: 160px; display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    .book-cover-shine {
+      position: absolute; top: -40%; left: -40%; width: 80%; height: 80%;
+      background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .book-info { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .book-category { align-self: flex-start; font-size: 0.7rem; }
+    .book-title { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 600; color: #000000; line-height: 1.35; }
+    .book-author { font-size: 0.82rem; color: var(--gray-500); }
+    .book-isbn { font-size: 0.75rem; color: var(--gray-400); font-family: monospace; }
+    .book-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 12px; }
+    .book-actions { display: flex; gap: 8px; }
+    .btn-sm { padding: 6px 14px; font-size: 0.8rem; border-radius: 8px; }
+
+    /* ===== LOANS PAGE ===== */
+    .loans-page { padding: 32px 0 48px; }
+    .page-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .page-header h1 { font-size: 1.6rem; color: #000000; margin-bottom: 2px; }
+    .page-header p { color: var(--gray-500); font-size: 0.875rem; }
+    .summary-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+    .summary-card { padding: 20px 24px; }
+    .sc-label { font-size: 0.8rem; color: var(--gray-500); margin-bottom: 6px; font-weight: 500; }
+    .sc-val { font-size: 2rem; font-weight: 700; color: #000000; }
+    .fine-notice {
+      padding: 20px 24px; margin-bottom: 24px;
+      background: #fff7ed; border: 1px solid #fed7aa;
+      display: flex; align-items: center; gap: 16px;
+    }
+    .fine-notice h3 { font-size: 1rem; margin-bottom: 4px; color: #000000; }
+    .fine-notice p { font-size: 0.82rem; color: var(--gray-600); }
+    .fine-notice > div { flex: 1; }
+    .header-tabs { display: flex; gap: 4px; background: var(--gray-100); border-radius: 8px; padding: 4px; }
+    .tab { padding: 6px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 500; color: var(--gray-500); transition: all var(--transition); }
+    .tab--active { background: white; color: var(--green-dark); font-weight: 600; box-shadow: var(--shadow); }
+    .loans-table { overflow: hidden; }
+    .table-header {
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+      padding: 12px 20px; background: var(--gray-50);
+      font-size: 0.78rem; font-weight: 600; color: var(--gray-500);
+      text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--gray-200);
+    }
+    .table-row {
+      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+      padding: 16px 20px; align-items: center;
+      border-bottom: 1px solid var(--gray-100); transition: background var(--transition);
+    }
+    .table-row:last-child { border-bottom: none; }
+    .table-row:hover { background: var(--gray-50); }
+    .row--overdue { background: #fff5f5; }
+    .row--overdue:hover { background: #fee2e2; }
+    .book-cell { display: flex; align-items: center; gap: 12px; }
+    .book-thumb {
+      width: 40px; height: 40px; border-radius: 8px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--green-dark), var(--green-light));
+      display: flex; align-items: center; justify-content: center;
+    }
+    .book-title-cell { font-weight: 600; font-size: 0.875rem; color: #000000; margin-bottom: 2px; }
+    .book-author-cell { font-size: 0.78rem; color: var(--gray-500); }
+    .due-cell { display: flex; flex-direction: column; gap: 2px; }
+    .due-date { font-size: 0.875rem; font-weight: 600; color: #000000; }
+    .days-overdue { font-size: 0.72rem; color: var(--red); }
+    .fine-amount { color: var(--red); font-weight: 700; font-size: 0.9rem; }
+    .text-gray { color: var(--gray-400); }
+    .action-cell { display: flex; gap: 8px; }
+    .btn-xs { padding: 5px 12px; font-size: 0.78rem; border-radius: 6px; }
+    .btn-ghost { color: var(--green-dark); font-weight: 600; font-size: 0.78rem; padding: 5px 12px; border-radius: 6px; transition: background var(--transition); }
+    .btn-ghost:hover { background: var(--green-ok-light); }
+    .tips { display: grid; grid-template-columns: repeat(3, 1fr); overflow: hidden; }
+    .tip { padding: 24px; border-right: 1px solid var(--gray-100); display: flex; gap: 14px; }
+    .tip:last-child { border-right: none; }
+    .tip-icon { font-size: 1.5rem; flex-shrink: 0; }
+    .tip strong { display: block; font-size: 0.9rem; margin-bottom: 4px; color: #000000; }
+    .tip p { font-size: 0.8rem; color: var(--gray-500); line-height: 1.5; }
+
+    /* ===== RESERVATIONS ===== */
+    .res-page { padding: 32px 0 48px; }
+    .reservations-list { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+    .res-card { display: flex; align-items: center; gap: 20px; padding: 20px 24px; }
+    .res-cover {
+      width: 56px; height: 72px; border-radius: 8px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--green-dark), var(--green-light));
+      display: flex; align-items: center; justify-content: center;
+    }
+    .res-details { flex: 1; }
+    .res-details h3 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; color: #000000; }
+    .res-author { font-size: 0.82rem; color: var(--gray-500); margin-bottom: 8px; }
+    .res-queue { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 80px; }
+    .queue-label { font-size: 0.72rem; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.04em; }
+    .queue-num { font-size: 1.8rem; font-weight: 700; color: var(--gold); line-height: 1; }
+    .queue-sub { font-size: 0.72rem; color: var(--gray-500); }
+    .res-status { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .res-date { font-size: 0.72rem; color: var(--gray-400); }
+    .res-actions { display: flex; flex-direction: column; gap: 8px; }
+    .btn-sm-x { padding: 7px 14px; font-size: 0.82rem; border-radius: 8px; }
+    .btn-ghost-sm { font-size: 0.82rem; color: var(--green-dark); font-weight: 600; padding: 7px 14px; border-radius: 8px; transition: background var(--transition); text-align: center; }
+    .btn-ghost-sm:hover { background: var(--green-ok-light); }
+    .info-section { padding: 28px 32px; }
+    .info-section h3 { font-size: 1.1rem; margin-bottom: 20px; color: #000000; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .step { display: flex; gap: 14px; }
+    .step-num {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      background: var(--green-dark); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.875rem;
+    }
+    .step strong { display: block; font-size: 0.875rem; margin-bottom: 4px; color: #000000; }
+    .step p { font-size: 0.8rem; color: var(--gray-500); line-height: 1.5; }
+
+    /* ===== BOOK DETAIL ===== */
+    .detail-page { padding: 32px 0 48px; }
+    .detail-header { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .detail-header h1 { font-size: 1.5rem; color: #000000; margin-bottom: 2px; }
+    .detail-header p { color: var(--gray-500); font-size: 0.875rem; }
+    .detail-card { display: flex; gap: 32px; padding: 32px; margin-bottom: 20px; }
+    .book-cover-lg {
+      width: 220px; min-height: 280px; border-radius: 16px; flex-shrink: 0;
+      background: linear-gradient(160deg, var(--green-dark) 0%, var(--green-light) 100%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .detail-content { flex: 1; display: flex; flex-direction: column; gap: 16px; }
+    .book-title-lg { font-size: 1.6rem; color: #000000; }
+    .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .meta-block {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: var(--gray-50); border-radius: var(--radius-sm);
+      padding: 12px 14px; border: 1px solid var(--gray-100);
+    }
+    .meta-block > div { display: flex; flex-direction: column; gap: 2px; }
+    .meta-l { font-size: 0.72rem; color: var(--gray-400); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+    .meta-v { font-size: 0.9rem; font-weight: 600; color: #000000; }
+    .mono { font-family: monospace; }
+    .text-green { color: var(--green-ok); }
+    .text-gold { color: var(--gold); }
+    .description h3 { font-size: 1rem; color: #000000; margin-bottom: 6px; }
+    .description p { font-size: 0.875rem; color: var(--gray-500); line-height: 1.6; }
+    .status-alert {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--red-light); border-radius: var(--radius-sm); padding: 12px 16px;
+      color: var(--red); font-size: 0.875rem;
+    }
+    .status-alert > div { display: flex; flex-direction: column; gap: 2px; }
+    .status-alert strong { font-weight: 600; }
+    .action-row { display: flex; gap: 12px; }
+    .reservation-success {
+      text-align: center; padding: 48px 40px; margin-bottom: 20px;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      animation: slideUp 0.4s ease;
+    }
+    .reservation-success h2 { font-size: 1.6rem; }
+    .reservation-success > p { color: var(--gray-500); }
+    .res-info { background: var(--gray-50); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; }
+    .res-info > div { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+    .res-divider { height: 1px; background: var(--gray-200); }
+    .queue-big { font-size: 2rem; font-weight: 700; color: #000000; }
+    .notify-box { display: flex; align-items: flex-start; gap: 12px; background: #eff6ff; border-radius: var(--radius); padding: 16px 20px; max-width: 400px; text-align: left; }
+    .notify-box strong { display: block; font-size: 0.9rem; margin-bottom: 4px; color: var(--green-dark); }
+    .notify-box p { font-size: 0.8rem; color: #1d4ed8; line-height: 1.5; }
+    .policy { font-size: 0.78rem; color: var(--gray-400); max-width: 420px; text-align: left; line-height: 1.5; }
+    .borrowing-info { padding: 24px 28px; }
+    .borrowing-info h3 { font-size: 1.1rem; margin-bottom: 16px; color: #000000; }
+    .borrow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .borrow-item { display: flex; flex-direction: column; gap: 4px; }
+    .borrow-item strong { font-size: 1rem; color: #000000; }
+    .not-found { padding: 48px; text-align: center; color: var(--gray-500); }
+
+    /* ===== LIBRARIAN ===== */
+    .admin-page { padding: 32px 0 48px; }
+    .page-header-admin { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 28px; }
+    .page-header-admin h1 { font-size: 1.8rem; color: #000000; margin-bottom: 4px; }
+    .page-header-admin p { color: var(--gray-500); font-size: 0.875rem; }
+    .admin-badge { background: var(--gold); color: white; padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
+    .admin-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .astat { padding: 20px 24px; }
+    .astat-label { font-size: 0.78rem; color: var(--gray-500); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+    .astat-val { font-size: 2.2rem; font-weight: 700; color: #000000; line-height: 1; margin-bottom: 4px; }
+    .astat-sub { font-size: 0.78rem; color: var(--gray-400); }
+    .admin-tabs { display: flex; gap: 4px; background: var(--gray-100); border-radius: 10px; padding: 4px; margin-bottom: 24px; width: fit-content; }
+    .section-actions { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .section-actions h2 { font-size: 1.2rem; color: #000000; }
+    .search-mini input {
+      padding: 8px 14px; border-radius: 8px; border: 2px solid var(--gray-200);
+      font-size: 0.875rem; font-family: inherit; outline: none; width: 220px; color: #000000;
+    }
+    .search-mini input:focus { border-color: var(--green-dark); box-shadow: 0 0 0 3px rgba(26,61,43,0.08); }
+    .admin-table { overflow: hidden; margin-bottom: 24px; }
+    .at-header {
+      display: grid; grid-template-columns: 2.5fr 1fr 1.5fr 1fr 0.8fr;
+      padding: 12px 20px; background: var(--gray-50);
+      font-size: 0.75rem; font-weight: 600; color: var(--gray-500);
+      text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--gray-200);
+    }
+    .at-header--loans { grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr 1.5fr; }
+    .at-row {
+      display: grid; grid-template-columns: 2.5fr 1fr 1.5fr 1fr 0.8fr;
+      padding: 14px 20px; align-items: center;
+      border-bottom: 1px solid var(--gray-100); transition: background var(--transition);
+    }
+    .at-row:last-child { border-bottom: none; }
+    .at-row:hover { background: var(--gray-50); }
+    .at-row--loans { grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr 1.5fr; }
+    .at-book { display: flex; align-items: center; gap: 10px; }
+    .at-thumb {
+      width: 34px; height: 34px; border-radius: 6px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--green-dark), var(--green-light));
+      display: flex; align-items: center; justify-content: center;
+    }
+    .at-title { font-weight: 600; font-size: 0.875rem; color: #000000; }
+    .at-author { font-size: 0.78rem; color: var(--gray-500); }
+    .at-isbn { font-size: 0.78rem; color: var(--gray-400); font-family: monospace; }
+    .at-actions { display: flex; gap: 6px; align-items: center; }
+    .btn-icon { font-size: 1rem; padding: 4px; border-radius: 6px; transition: background var(--transition); }
+    .btn-icon:hover { background: var(--gray-100); }
+    .borrower-chip { display: flex; align-items: center; gap: 8px; }
+    .borrower-av {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--green-dark); color: white;
+      font-size: 0.72rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .due-txt { font-size: 0.875rem; font-weight: 500; color: #000000; }
+    .btn-xs-a { padding: 5px 12px; font-size: 0.78rem; border-radius: 6px; }
+    .btn-ghost-xs { font-size: 0.78rem; color: var(--green-dark); font-weight: 600; padding: 5px 12px; border-radius: 6px; transition: background var(--transition); }
+    .btn-ghost-xs:hover { background: var(--green-ok-light); }
+    .at-empty { padding: 32px; text-align: center; color: var(--gray-500); }
+    .mb20 { margin-bottom: 20px; }
+    .reports-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .report-card { padding: 24px 28px; }
+    .report-card h3 { font-size: 1rem; margin-bottom: 20px; color: #000000; }
+    .report-card--full { grid-column: 1 / -1; }
+    .cat-bars { display: flex; flex-direction: column; gap: 14px; }
+    .cat-bar-label { display: flex; justify-content: space-between; font-size: 0.82rem; color: #000000; margin-bottom: 4px; }
+    .cat-bar-track { height: 8px; background: var(--gray-100); border-radius: 4px; overflow: hidden; }
+    .cat-bar-fill { height: 100%; background: var(--green-dark); border-radius: 4px; transition: width 0.6s ease; }
+    .status-donut { display: flex; flex-direction: column; gap: 16px; }
+    .status-row-r { display: flex; align-items: center; gap: 10px; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .status-name { font-size: 0.82rem; color: #000000; min-width: 70px; }
+    .status-bar-track { flex: 1; height: 8px; background: var(--gray-100); border-radius: 4px; overflow: hidden; }
+    .status-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+    .status-cnt { font-size: 0.82rem; font-weight: 700; min-width: 20px; text-align: right; color: #000000; }
+    .quick-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    .qs-item { display: flex; flex-direction: column; gap: 6px; padding: 16px; background: var(--gray-50); border-radius: var(--radius-sm); }
+    .qs-label { font-size: 0.78rem; color: var(--gray-500); font-weight: 500; }
+    .qs-val { font-size: 1.5rem; font-weight: 700; color: #000000; }
+    .admin-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 24px; }
+    .admin-modal { width: 100%; max-width: 480px; padding: 36px; }
+    .admin-modal h2 { font-size: 1.4rem; margin-bottom: 24px; color: #000000; }
+    .admin-modal-form { display: flex; flex-direction: column; gap: 16px; }
+    .admin-field { display: flex; flex-direction: column; gap: 6px; }
+    .admin-field label { font-size: 0.875rem; font-weight: 600; color: #000000; }
+    .admin-field input, .admin-field select, .admin-field textarea {
+      padding: 10px 14px; border-radius: var(--radius-sm);
+      border: 2px solid var(--gray-200); font-size: 0.9rem;
+      font-family: inherit; outline: none; background: var(--gray-50); color: #000000;
+      transition: border-color var(--transition);
+    }
+    .admin-field input:focus, .admin-field select:focus, .admin-field textarea:focus { border-color: var(--green-dark); background: white; box-shadow: 0 0 0 3px rgba(26,61,43,0.08); }
+    .admin-field textarea { resize: vertical; }
+
+    /* ===== TOAST ===== */
+    .toast-container {
+      position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+      display: flex; flex-direction: column; gap: 10px; align-items: flex-end;
+    }
+    .toast {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 18px; border-radius: 10px;
+      font-size: 0.875rem; font-weight: 500;
+      box-shadow: var(--shadow-md); max-width: 320px;
+    }
+    .toast--success { background: var(--green-dark); color: white; }
+    .toast--info { background: var(--green-mid); color: white; }
+    .toast--error { background: var(--red); color: white; }
+    .toast-enter-active, .toast-leave-active { transition: all 0.3s ease; }
+    .toast-enter-from { opacity: 0; transform: translateX(30px); }
+    .toast-leave-to { opacity: 0; transform: translateX(30px); }
+
+    @media (max-width: 768px) {
+      .books-grid { grid-template-columns: 1fr 1fr; }
+      .quick-actions, .stats-row, .admin-stats { grid-template-columns: repeat(2, 1fr); }
+      .reports-grid { grid-template-columns: 1fr; }
+      .tips { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+const { createApp, reactive, ref, computed, onMounted } = Vue;
+const { createRouter, createWebHashHistory, RouterLink, RouterView, useRouter, useRoute } = VueRouter;
+
+// ===== STORE =====
+const store = reactive({
+  currentUser: null,
+  notifications: [],
+  books: [
+    { id: 1, title: 'Introduction to Computer Science', author: 'John Smith', isbn: '978-0-123456-47-2', category: 'Computer Science', status: 'borrowed', description: 'A comprehensive introduction to computer science fundamentals covering programming, algorithms, and computational thinking.', borrowedBy: 'JM', dueDate: '2025-12-20' },
+    { id: 2, title: 'Data Structures and Algorithms', author: 'Jane Doe', isbn: '978-0-123456-48-9', category: 'Computer Science', status: 'overdue', description: 'An in-depth exploration of data structures and algorithmic problem solving.', borrowedBy: 'JM', dueDate: '2025-12-05', fine: 5.00 },
+    { id: 3, title: 'Modern Web Development', author: 'Robert Johnson', isbn: '978-0-123456-49-6', category: 'Web Development', status: 'available', description: 'A practical guide to modern web development using the latest technologies and frameworks.' },
+    { id: 4, title: 'Principles of Economics', author: 'Sarah Williams', isbn: '978-0-123456-50-2', category: 'Economics', status: 'available', description: 'An introduction to microeconomics and macroeconomics principles for university students.' },
+    { id: 5, title: 'Database Management Systems', author: 'Michael Brown', isbn: '978-0-123456-51-9', category: 'Computer Science', status: 'reserved', description: 'Comprehensive coverage of database concepts, SQL, and database design principles.' },
+    { id: 6, title: 'Business Statistics', author: 'Emily Davis', isbn: '978-0-123456-52-6', category: 'Business', status: 'available', description: 'Statistical methods for business decision-making and data analysis.' },
+    { id: 7, title: 'Digital Marketing Fundamentals', author: 'Chris Lee', isbn: '978-0-123456-53-3', category: 'Business', status: 'available', description: 'A comprehensive guide to digital marketing strategies, SEO, and social media.' },
+    { id: 8, title: 'Linear Algebra for Engineers', author: 'Patricia Moore', isbn: '978-0-123456-54-0', category: 'Mathematics', status: 'borrowed', description: 'Essential linear algebra concepts applied to engineering problems.', borrowedBy: 'other' },
+  ],
+  reservations: [],
+  loans: [],
+  login(email, password) {
+    if (password.length < 4) return false;
+    const isLibrarian = email.includes('librarian@');
+    this.currentUser = { name: isLibrarian ? 'Dr. Abena Asante' : 'John Mensah', email, initials: isLibrarian ? 'AA' : 'JM', role: isLibrarian ? 'librarian' : 'student', studentId: 'LUG/2023/1234' };
+    return true;
+  },
+  logout() { this.currentUser = null; },
+  getUserLoans() { return this.books.filter(b => b.borrowedBy === 'JM'); },
+  borrowBook(bookId) {
+    const book = this.books.find(b => b.id === bookId);
+    if (book && book.status === 'available') {
+      book.status = 'borrowed'; book.borrowedBy = 'JM';
+      const due = new Date(); due.setDate(due.getDate() + 14);
+      book.dueDate = due.toISOString().split('T')[0];
+      this.addNotification(`You borrowed "${book.title}"`, 'success'); return true;
+    }
+    return false;
+  },
+  reserveBook(bookId) {
+    const book = this.books.find(b => b.id === bookId);
+    if (book) {
+      this.reservations.push({ bookId, userId: 'JM', position: 3, date: new Date() });
+      this.addNotification(`Reserved "${book.title}" – Queue position #3`, 'info'); return true;
+    }
+    return false;
+  },
+  renewBook(bookId) {
+    const book = this.books.find(b => b.id === bookId && b.borrowedBy === 'JM');
+    if (book) {
+      const due = new Date(book.dueDate); due.setDate(due.getDate() + 14);
+      book.dueDate = due.toISOString().split('T')[0];
+      if (book.status === 'overdue') { book.status = 'borrowed'; book.fine = 0; }
+      this.addNotification(`Renewed "${book.title}" for 14 more days`, 'success'); return true;
+    }
+    return false;
+  },
+  addNotification(message, type = 'info') {
+    const id = Date.now();
+    this.notifications.push({ id, message, type });
+    setTimeout(() => { this.notifications = this.notifications.filter(n => n.id !== id); }, 3500);
+  },
+  getCategories() { return [...new Set(this.books.map(b => b.category))]; }
+});
+
+// ===== COMPONENTS =====
+const AppNavbar = {
+  setup() {
+    const router = useRouter();
+    function logout() { store.logout(); router.push('/login'); }
+    return { store, logout };
+  },
+  template: `
+    <nav class="navbar">
+      <div class="navbar-inner page-container">
+        <router-link to="/dashboard" class="brand">
+          <div class="brand-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          </div>
+          <div class="brand-text">
+            <span class="brand-name">University Library System</span>
+            <span class="brand-sub">Student Portal</span>
+          </div>
+        </router-link>
+        <div class="nav-links">
+          <router-link to="/dashboard" class="nav-link">Dashboard</router-link>
+          <router-link to="/search" class="nav-link">Search Books</router-link>
+          <router-link to="/loans" class="nav-link">My Loans</router-link>
+          <router-link to="/reservations" class="nav-link">Reservations</router-link>
+          <router-link v-if="store.currentUser?.role === 'librarian'" to="/librarian" class="nav-link nav-link--gold">Admin</router-link>
+        </div>
+        <div class="nav-right">
+          <div class="user-pill">
+            <div class="avatar">{{ store.currentUser?.initials }}</div>
+            <span class="user-name">{{ store.currentUser?.name }}</span>
+            <button class="logout-btn" @click="logout" title="Logout">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+  `
+};
+
+const NotificationToast = {
+  setup() { return { store }; },
+  template: `
+    <div class="toast-container">
+      <transition-group name="toast">
+        <div v-for="n in store.notifications" :key="n.id" :class="['toast', 'toast--' + n.type]">
+          <span>
+            <svg v-if="n.type==='success'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </span>
+          {{ n.message }}
+        </div>
+      </transition-group>
+    </div>
+  `
+};
+
+const BookCard = {
+  props: { book: Object },
+  setup(props) {
+    const router = useRouter();
+    const statusBadge = computed(() => ({ available: 'badge-green', borrowed: 'badge-red', overdue: 'badge-red', reserved: 'badge-gray' }[props.book.status] || 'badge-gray'));
+    const statusLabel = computed(() => props.book.status.charAt(0).toUpperCase() + props.book.status.slice(1));
+    function borrow() { store.borrowBook(props.book.id); }
+    function reserve() { store.reserveBook(props.book.id); }
+    return { statusBadge, statusLabel, borrow, reserve, router };
+  },
+  template: `
+    <div class="book-card" @click="router.push('/book/' + book.id)">
+      <div class="book-cover">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <div class="book-cover-shine"></div>
+      </div>
+      <div class="book-info">
+        <div class="book-category badge badge-gold">{{ book.category }}</div>
+        <h3 class="book-title">{{ book.title }}</h3>
+        <p class="book-author">{{ book.author }}</p>
+        <p class="book-isbn">ISBN: {{ book.isbn }}</p>
+        <div class="book-footer">
+          <span :class="['badge', statusBadge]">{{ statusLabel }}</span>
+          <div class="book-actions" @click.stop>
+            <button v-if="book.status === 'available'" class="btn btn-primary btn-sm" @click="borrow">Borrow</button>
+            <button v-if="book.status !== 'available'" class="btn btn-outline btn-sm" @click="reserve">Reserve</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+};
+
+// ===== VIEWS =====
+const LoginView = {
+  setup() {
+    const router = useRouter();
+    const email = ref(''); const password = ref('');
+    const error = ref(''); const loading = ref(false);
+    const showPass = ref(false); const showCreateAccount = ref(false);
+    async function handleLogin() {
+      error.value = ''; loading.value = true;
+      await new Promise(r => setTimeout(r, 600));
+      const ok = store.login(email.value, password.value);
+      loading.value = false;
+      if (ok) router.push('/dashboard');
+      else error.value = 'Invalid credentials. Please try again.';
+    }
+    return { email, password, error, loading, showPass, showCreateAccount, handleLogin, store };
+  },
+  template: `
+    <div class="login-page">
+      <div class="login-bg"><div class="bg-pattern"></div></div>
+      <div class="login-card card">
+        <div class="login-logo">
+          <div class="logo-circle">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          </div>
+          <h1>University Library System</h1>
+          <p>Sign in to access your account</p>
+        </div>
+        <form @submit.prevent="handleLogin" class="login-form">
+          <div v-if="error" class="error-banner">{{ error }}</div>
+          <div class="field">
+            <label>Email Address</label>
+            <input v-model="email" type="email" placeholder="student@university.edu" required />
+            <span class="field-hint">Use 'librarian@...' for Librarian Dashboard or any other email for Student Dashboard</span>
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <div class="password-wrapper">
+              <input v-model="password" :type="showPass ? 'text' : 'password'" placeholder="Enter your password" required />
+              <button type="button" class="toggle-pass" @click="showPass = !showPass">
+                <svg v-if="!showPass" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary login-btn" :disabled="loading">
+            <svg v-if="!loading" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            <span v-if="loading">Logging in…</span><span v-else>Login</span>
+          </button>
+          <button type="button" class="btn btn-outline create-btn" @click="showCreateAccount = true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            Create Account
+          </button>
+        </form>
+        <p class="help-text">Need help? Contact <a href="mailto:library@university.edu">library@university.edu</a></p>
+      </div>
+      <div v-if="showCreateAccount" class="modal-overlay" @click.self="showCreateAccount = false">
+        <div class="modal card">
+          <h2>Create Account</h2>
+          <p class="modal-sub">Register for library access</p>
+          <form @submit.prevent="showCreateAccount = false; store.addNotification('Account created! Please login.', 'success')">
+            <div class="field"><label>Full Name</label><input type="text" placeholder="Your full name" required /></div>
+            <div class="field"><label>Student ID</label><input type="text" placeholder="ULS/2024/XXXX" required /></div>
+            <div class="field"><label>Email</label><input type="email" placeholder="student@university.edu" required /></div>
+            <div class="field"><label>Password</label><input type="password" placeholder="Create password" required /></div>
+            <div class="modal-actions">
+              <button type="button" class="btn btn-outline" @click="showCreateAccount = false">Cancel</button>
+              <button type="submit" class="btn btn-primary">Create Account</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  `
+};
+
+const DashboardView = {
+  setup() {
+    const userLoans = computed(() => store.getUserLoans());
+    const overdueBooks = computed(() => userLoans.value.filter(b => b.status === 'overdue'));
+    const totalFines = computed(() => userLoans.value.reduce((s, b) => s + (b.fine || 0), 0));
+    const todayDate = new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    function formatDate(d) { if (!d) return '—'; return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+    return { store, userLoans, overdueBooks, totalFines, todayDate, formatDate };
+  },
+  template: `
+    <div class="dashboard">
+      <div class="page-container">
+        <div class="dash-header">
+          <div>
+            <h1>Welcome back, {{ store.currentUser?.name.split(' ')[0] }} 👋</h1>
+            <p class="dash-sub">Here's your library activity overview</p>
+          </div>
+          <div class="dash-date">{{ todayDate }}</div>
+        </div>
+        <div class="quick-actions">
+          <router-link to="/search" class="action-card action-card--primary">
+            <div class="action-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+            <span>Search Books</span>
+          </router-link>
+          <router-link to="/reservations" class="action-card">
+            <div class="action-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+            <span>Reserve Book</span>
+          </router-link>
+          <router-link to="/loans" class="action-card">
+            <div class="action-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></div>
+            <span>Renew Book</span>
+          </router-link>
+          <router-link to="/loans" class="action-card">
+            <div class="action-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
+            <span>View My Loans</span>
+          </router-link>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card"><div class="stat-content"><div><p class="stat-label">Borrowed Books</p><p class="stat-value">{{ userLoans.length }}</p></div><div class="stat-icon stat-icon--blue"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div></div></div>
+          <div class="stat-card stat-card--warn"><div class="stat-content"><div><p class="stat-label">Overdue Books</p><p class="stat-value stat-value--red">{{ overdueBooks.length }}</p></div><div class="stat-icon stat-icon--red"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div></div></div>
+          <div class="stat-card"><div class="stat-content"><div><p class="stat-label">Total Fines</p><p class="stat-value" :class="totalFines > 0 ? 'stat-value--red' : ''">R{{ totalFines.toFixed(2) }}</p></div><div class="stat-icon stat-icon--gold"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div></div></div>
+          <div class="stat-card"><div class="stat-content"><div><p class="stat-label">Active Reservations</p><p class="stat-value">{{ store.reservations.length }}</p></div><div class="stat-icon stat-icon--green"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></div>
+        </div>
+        <div v-if="overdueBooks.length" class="alert-banner">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div><strong>You have overdue books!</strong><span> Please return or renew them to avoid additional fines. Late fee is R1.00 per day.</span></div>
+          <router-link to="/loans" class="btn btn-primary btn-sm-a">View Loans</router-link>
+        </div>
+        <div class="section">
+          <div class="section-header"><h2>My Borrowed Books</h2><span class="badge badge-green">{{ userLoans.length }} Books</span></div>
+          <div v-if="!userLoans.length" class="empty-state">
+            <p>No borrowed books currently.</p>
+            <router-link to="/search" class="btn btn-primary">Browse Library</router-link>
+          </div>
+          <div v-else class="loans-list">
+            <div v-for="book in userLoans" :key="book.id" class="loan-item card">
+              <div class="loan-cover"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+              <div class="loan-info"><p class="loan-title">{{ book.title }}</p><p class="loan-author">{{ book.author }}</p></div>
+              <div class="loan-meta">
+                <div class="loan-date"><span class="meta-label">Due Date</span><span :class="['meta-val', book.status === 'overdue' ? 'text-red' : '']">{{ formatDate(book.dueDate) }}</span></div>
+                <div v-if="book.fine" class="loan-fine"><span class="meta-label">Fine</span><span class="meta-val text-red">R{{ book.fine.toFixed(2) }}</span></div>
+                <span :class="['badge', book.status === 'overdue' ? 'badge-red' : 'badge-green']">{{ book.status === 'overdue' ? 'Overdue' : 'Active' }}</span>
+                <button class="btn btn-outline btn-sm-a" @click="store.renewBook(book.id)">Renew</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-header"><h2>Library Announcements</h2></div>
+          <div class="announcements">
+            <div class="announcement-item"><div class="ann-dot ann-dot--gold"></div><div><p class="ann-title">Extended Hours During Exams</p><p class="ann-body">The library will be open 24/7 from December 10–20 during the examination period.</p><span class="ann-date">Dec 1, 2025</span></div></div>
+            <div class="announcement-item"><div class="ann-dot ann-dot--green"></div><div><p class="ann-title">New Books Arrived</p><p class="ann-body">Over 200 new titles have been added to the Computer Science and Business sections.</p><span class="ann-date">Nov 28, 2025</span></div></div>
+            <div class="announcement-item"><div class="ann-dot ann-dot--blue"></div><div><p class="ann-title">Digital Resources Available</p><p class="ann-body">Students now have access to JSTOR, Scopus, and IEEE Xplore through the student portal.</p><span class="ann-date">Nov 20, 2025</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+};
+
+const SearchBooksView = {
+  components: { BookCard },
+  setup() {
+    const router = useRouter();
+    const query = ref(''); const selectedCategory = ref(''); const selectedStatus = ref(''); const authorFilter = ref('');
+    const categories = computed(() => store.getCategories());
+    const filtered = computed(() => store.books.filter(b => {
+      const q = query.value.toLowerCase();
+      if (q && !b.title.toLowerCase().includes(q) && !b.author.toLowerCase().includes(q) && !b.isbn.includes(q)) return false;
+      if (selectedCategory.value && b.category !== selectedCategory.value) return false;
+      if (selectedStatus.value && b.status !== selectedStatus.value) return false;
+      if (authorFilter.value && !b.author.toLowerCase().includes(authorFilter.value.toLowerCase())) return false;
+      return true;
+    }));
+    function clearFilters() { query.value = ''; selectedCategory.value = ''; selectedStatus.value = ''; authorFilter.value = ''; }
+    return { router, query, selectedCategory, selectedStatus, authorFilter, categories, filtered, clearFilters };
+  },
+  template: `
+    <div class="search-page">
+      <div class="page-container">
+        <div class="search-header">
+          <button class="back-btn" @click="router.back()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Back
+          </button>
+          <div><h1>Search Books</h1><p>Browse our library collection</p></div>
+        </div>
+        <div class="search-box card">
+          <div class="search-input-wrap">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input v-model="query" type="text" placeholder="Search by title, author, or ISBN…" />
+            <button v-if="query" class="clear-btn" @click="query = ''">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="filters">
+            <div class="filter-group">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              <span>Filters:</span>
+              <div class="select-wrap"><select v-model="selectedCategory"><option value="">All Categories</option><option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option></select></div>
+              <div class="select-wrap"><select v-model="selectedStatus"><option value="">All Status</option><option value="available">Available</option><option value="borrowed">Borrowed</option><option value="reserved">Reserved</option></select></div>
+              <input v-model="authorFilter" type="text" class="author-filter" placeholder="Filter by author…" />
+            </div>
+            <div class="results-count badge badge-green">{{ filtered.length }} Books Found</div>
+          </div>
+        </div>
+        <div v-if="!filtered.length" class="empty">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--gray-300)" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <p>No books match your search.</p>
+          <button class="btn btn-outline" @click="clearFilters">Clear Filters</button>
+        </div>
+        <div v-else class="books-grid">
+          <BookCard v-for="book in filtered" :key="book.id" :book="book" />
+        </div>
+      </div>
+    </div>
+  `
+};
+
+const MyLoansView = {
+  setup() {
+    const router = useRouter();
+    const filter = ref('all');
+    const loans = computed(() => store.getUserLoans());
+    const activeLoans = computed(() => loans.value.filter(b => b.status === 'borrowed'));
+    const overdueLoans = computed(() => loans.value.filter(b => b.status === 'overdue'));
+    const totalFines = computed(() => loans.value.reduce((s, b) => s + (b.fine || 0), 0));
+    const displayedLoans = computed(() => { if (filter.value === 'active') return activeLoans.value; if (filter.value === 'overdue') return overdueLoans.value; return loans.value; });
+    function formatDate(d) { if (!d) return '—'; return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+    function daysOverdue(d) { const diff = Date.now() - new Date(d).getTime(); return Math.max(0, Math.floor(diff / 86400000)); }
+    function renewAll() { overdueLoans.value.forEach(b => store.renewBook(b.id)); }
+    return { router, filter, loans, activeLoans, overdueLoans, totalFines, displayedLoans, formatDate, daysOverdue, renewAll, store };
+  },
+  template: `
+    <div class="loans-page">
+      <div class="page-container">
+        <div class="page-header">
+          <button class="back-btn" @click="router.back()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Back</button>
+          <div><h1>My Loans</h1><p>Track your borrowed books and due dates</p></div>
+        </div>
+        <div class="summary-cards">
+          <div class="summary-card card"><p class="sc-label">Active Loans</p><p class="sc-val">{{ activeLoans.length }}</p></div>
+          <div class="summary-card card"><p class="sc-label">Overdue</p><p class="sc-val text-red">{{ overdueLoans.length }}</p></div>
+          <div class="summary-card card"><p class="sc-label">Total Fines</p><p class="sc-val text-red">R{{ totalFines.toFixed(2) }}</p></div>
+        </div>
+        <div v-if="overdueLoans.length" class="fine-notice card">
+          <div><h3>⚠️ Outstanding Fines</h3><p>You have overdue books with fines accumulating at R1.00 per day. Please return or renew these books immediately.</p></div>
+          <button class="btn btn-primary" @click="renewAll">Renew All Overdue</button>
+        </div>
+        <div class="section">
+          <div class="section-header">
+            <h2>All Borrowed Books</h2>
+            <div class="header-tabs">
+              <button :class="['tab', filter === 'all' ? 'tab--active' : '']" @click="filter = 'all'">All ({{ loans.length }})</button>
+              <button :class="['tab', filter === 'active' ? 'tab--active' : '']" @click="filter = 'active'">Active</button>
+              <button :class="['tab', filter === 'overdue' ? 'tab--active' : '']" @click="filter = 'overdue'">Overdue</button>
+            </div>
+          </div>
+          <div v-if="!displayedLoans.length" class="empty-state card"><p>No {{ filter !== 'all' ? filter : '' }} loans found.</p></div>
+          <div v-else class="loans-table card">
+            <div class="table-header"><span>Book</span><span>Due Date</span><span>Status</span><span>Fine</span><span>Actions</span></div>
+            <div v-for="book in displayedLoans" :key="book.id" :class="['table-row', book.status === 'overdue' ? 'row--overdue' : '']">
+              <div class="book-cell"><div class="book-thumb"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div><div><p class="book-title-cell">{{ book.title }}</p><p class="book-author-cell">{{ book.author }}</p></div></div>
+              <div class="due-cell"><span :class="['due-date', book.status === 'overdue' ? 'text-red' : '']">{{ formatDate(book.dueDate) }}</span><span v-if="book.status === 'overdue'" class="days-overdue">{{ daysOverdue(book.dueDate) }} days overdue</span></div>
+              <div><span :class="['badge', book.status === 'overdue' ? 'badge-red' : 'badge-green']">{{ book.status === 'overdue' ? 'Overdue' : 'Active' }}</span></div>
+              <div><span v-if="book.fine" class="fine-amount">R{{ book.fine.toFixed(2) }}</span><span v-else class="text-gray">—</span></div>
+              <div class="action-cell"><button class="btn btn-outline btn-xs" @click="store.renewBook(book.id)">Renew</button><router-link :to="'/book/' + book.id" class="btn btn-xs btn-ghost">Details</router-link></div>
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-header"><h2>Borrowing Tips</h2></div>
+          <div class="tips card">
+            <div class="tip"><div class="tip-icon">📅</div><div><strong>Return on time</strong><p>Avoid fines by returning books before the due date. Set a reminder 3 days in advance.</p></div></div>
+            <div class="tip"><div class="tip-icon">🔄</div><div><strong>Renew up to 2 times</strong><p>You can renew each book up to 2 times as long as no one else has reserved it.</p></div></div>
+            <div class="tip"><div class="tip-icon">📱</div><div><strong>Email notifications</strong><p>You'll receive email reminders 3 days before your book is due.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+};
+
+const ReservationsView = {
+  setup() {
+    const router = useRouter();
+    const enrichedReservations = computed(() => store.reservations.map(r => ({ ...r, book: store.books.find(b => b.id === r.bookId) })));
+    function cancelReservation(bookId) { store.reservations = store.reservations.filter(r => r.bookId !== bookId); store.addNotification('Reservation cancelled', 'info'); }
+    function formatDate(d) { return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+    return { router, store, enrichedReservations, cancelReservation, formatDate };
+  },
+  template: `
+    <div class="res-page">
+      <div class="page-container">
+        <div class="page-header">
+          <button class="back-btn" @click="router.back()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Back</button>
+          <div><h1>My Reservations</h1><p>Track your book reservations and queue positions</p></div>
+        </div>
+        <div v-if="!store.reservations.length" class="empty-state card" style="padding:64px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:24px;">
+          <div style="font-size:3rem">📚</div>
+          <h3>No Active Reservations</h3>
+          <p style="color:var(--gray-500);font-size:0.875rem;max-width:360px;line-height:1.6">You haven't reserved any books yet. Browse our library to reserve books that are currently borrowed.</p>
+          <router-link to="/search" class="btn btn-primary">Browse Library</router-link>
+        </div>
+        <div v-else class="reservations-list">
+          <div v-for="res in enrichedReservations" :key="res.bookId" class="res-card card">
+            <div class="res-cover"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+            <div class="res-details"><h3>{{ res.book?.title }}</h3><p class="res-author">{{ res.book?.author }}</p><span class="badge badge-gold">{{ res.book?.category }}</span></div>
+            <div class="res-queue"><span class="queue-label">Queue Position</span><span class="queue-num">#{{ res.position }}</span><span class="queue-sub">{{ res.position - 1 }} people ahead</span></div>
+            <div class="res-status"><span class="badge badge-gray">Waiting</span><span class="res-date">Reserved {{ formatDate(res.date) }}</span></div>
+            <div class="res-actions"><button class="btn btn-outline btn-sm-x" @click="cancelReservation(res.bookId)">Cancel</button><router-link :to="'/book/' + res.bookId" class="btn-ghost-sm">View Book</router-link></div>
+          </div>
+        </div>
+        <div class="info-section card">
+          <h3>How Reservations Work</h3>
+          <div class="steps">
+            <div class="step"><div class="step-num">1</div><div><strong>Reserve a borrowed book</strong><p>When a book you want is borrowed, you can join the waiting queue.</p></div></div>
+            <div class="step"><div class="step-num">2</div><div><strong>Wait for your turn</strong><p>You'll be notified by email when the book becomes available for you.</p></div></div>
+            <div class="step"><div class="step-num">3</div><div><strong>Collect within 48 hours</strong><p>Once notified, visit the library within 48 hours to collect your reserved book.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+};
+
+const BookDetailView = {
+  setup() {
+    const route = useRoute(); const router = useRouter();
+    const reserved = ref(false);
+    const book = computed(() => store.books.find(b => b.id === parseInt(route.params.id)));
+    function borrow() { store.borrowBook(book.value.id); }
+    function reserve() { store.reserveBook(book.value.id); reserved.value = true; }
+    return { router, book, reserved, borrow, reserve };
+  },
+  template: `
+    <div class="detail-page">
+      <div class="page-container">
+        <div class="detail-header">
+          <button class="back-btn" @click="router.push('/search')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Back to Search</button>
+          <div><h1>Book Details</h1><p>View book information</p></div>
+        </div>
+        <div v-if="!book" class="not-found card">Book not found.</div>
+        <div v-else>
+          <div class="detail-card card">
+            <div class="book-cover-lg"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+            <div class="detail-content">
+              <h2 class="book-title-lg">{{ book.title }}</h2>
+              <span class="badge badge-gold">{{ book.category }}</span>
+              <div class="meta-grid">
+                <div class="meta-block"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><div><span class="meta-l">Author</span><span class="meta-v">{{ book.author }}</span></div></div>
+                <div class="meta-block"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg><div><span class="meta-l">ISBN</span><span class="meta-v mono">{{ book.isbn }}</span></div></div>
+                <div class="meta-block"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><div><span class="meta-l">Category</span><span class="meta-v">{{ book.category }}</span></div></div>
+                <div class="meta-block"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><div><span class="meta-l">Status</span><span :class="['meta-v', book.status === 'available' ? 'text-green' : 'text-red']">{{ book.status.charAt(0).toUpperCase() + book.status.slice(1) }}</span></div></div>
+              </div>
+              <div class="description"><h3>Description</h3><p>{{ book.description }}</p></div>
+              <div v-if="book.status !== 'available'" class="status-alert"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><div><strong>Currently {{ book.status }}</strong><span>Available for reservation</span></div></div>
+              <div class="action-row">
+                <button v-if="book.status === 'available'" class="btn btn-primary" @click="borrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Borrow This Book</button>
+                <button v-else class="btn btn-gold" @click="reserve"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Reserve This Book</button>
+                <button class="btn btn-outline" @click="router.push('/search')">Cancel</button>
+              </div>
+            </div>
+          </div>
+          <div v-if="reserved" class="reservation-success card">
+            <div style="font-size:2.5rem">✓</div><div style="font-size:2.5rem">🎟️</div>
+            <h2 class="text-gold">Reservation Successful!</h2>
+            <p>Your reservation has been confirmed</p>
+            <div class="res-info"><div><span class="meta-l">Book Title</span><strong>{{ book.title }}</strong></div><div class="res-divider"></div><div><span class="meta-l">Queue Position</span><strong class="queue-big">#3</strong><span class="queue-sub">2 people ahead of you</span></div></div>
+            <div class="notify-box"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green-dark)" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><div><strong>We'll Notify You</strong><p>You will receive an email notification when the book becomes available. You will have 48 hours to collect it.</p></div></div>
+            <router-link to="/dashboard" class="btn btn-primary"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>Return to Dashboard</router-link>
+          </div>
+          <div class="borrowing-info card"><h3>Borrowing Information</h3><div class="borrow-grid"><div class="borrow-item"><span class="meta-l">Loan Period</span><strong>14 days</strong></div><div class="borrow-item"><span class="meta-l">Renewal Limit</span><strong>2 times</strong></div><div class="borrow-item"><span class="meta-l">Late Fee</span><strong>R1.00 per day</strong></div></div></div>
+        </div>
+      </div>
+    </div>
+  `
+};
+
+const LibrarianView = {
+  setup() {
+    const { ref: r, computed: c, reactive: rea } = Vue;
+    const activeTab = ref('books');
+    const tabs = [{ id: 'books', label: 'Book Inventory' }, { id: 'loans', label: 'Active Loans' }, { id: 'reports', label: 'Reports' }];
+    const showAddBook = ref(false); const editingBook = ref(null); const loanSearch = ref('');
+    const bookForm = reactive({ title: '', author: '', isbn: '', category: '', description: '' });
+    const availableBooks = computed(() => store.books.filter(b => b.status === 'available').length);
+    const borrowedBooks = computed(() => store.books.filter(b => b.status === 'borrowed').length);
+    const overdueBooks = computed(() => store.books.filter(b => b.status === 'overdue').length);
+    const allLoans = computed(() => store.books.filter(b => b.borrowedBy));
+    const filteredLoans = computed(() => { const q = loanSearch.value.toLowerCase(); return allLoans.value.filter(b => !q || b.title.toLowerCase().includes(q)); });
+    const categoryStats = computed(() => { const counts = {}; store.books.forEach(b => { counts[b.category] = (counts[b.category] || 0) + 1; }); return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count); });
+    const statusStats = computed(() => [{ label: 'Available', count: availableBooks.value, color: '#16a34a' }, { label: 'Borrowed', count: borrowedBooks.value, color: '#6b7280' }, { label: 'Overdue', count: overdueBooks.value, color: '#dc2626' }, { label: 'Reserved', count: store.books.filter(b => b.status === 'reserved').length, color: '#c9a84c' }]);
+    function editBook(book) { editingBook.value = book; Object.assign(bookForm, { title: book.title, author: book.author, isbn: book.isbn, category: book.category, description: book.description || '' }); }
+    function deleteBook(id) { store.books = store.books.filter(b => b.id !== id); store.addNotification('Book removed from inventory', 'info'); }
+    function saveBook() { if (editingBook.value) { Object.assign(editingBook.value, bookForm); store.addNotification('Book updated successfully', 'success'); } else { store.books.push({ id: Date.now(), ...bookForm, status: 'available' }); store.addNotification(`"${bookForm.title}" added to library`, 'success'); } closeModal(); }
+    function closeModal() { showAddBook.value = false; editingBook.value = null; Object.assign(bookForm, { title: '', author: '', isbn: '', category: '', description: '' }); }
+    function markReturned(book) { book.status = 'available'; book.borrowedBy = null; book.fine = 0; book.dueDate = null; store.addNotification(`"${book.title}" marked as returned`, 'success'); }
+    function formatDate(d) { if (!d) return '—'; return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
+    return { store, activeTab, tabs, showAddBook, editingBook, loanSearch, bookForm, availableBooks, borrowedBooks, overdueBooks, filteredLoans, categoryStats, statusStats, editBook, deleteBook, saveBook, closeModal, markReturned, formatDate };
+  },
+  template: `
+    <div class="admin-page">
+      <div class="page-container">
+        <div class="page-header-admin">
+          <div><h1>Librarian Dashboard</h1><p>Manage books, loans, and library operations</p></div>
+          <span class="admin-badge">Admin</span>
+        </div>
+        <div class="admin-stats">
+          <div class="astat card"><p class="astat-label">Total Books</p><p class="astat-val">{{ store.books.length }}</p><p class="astat-sub">In collection</p></div>
+          <div class="astat card"><p class="astat-label">Available</p><p class="astat-val text-green">{{ availableBooks }}</p><p class="astat-sub">Ready to borrow</p></div>
+          <div class="astat card"><p class="astat-label">Borrowed</p><p class="astat-val">{{ borrowedBooks }}</p><p class="astat-sub">Currently out</p></div>
+          <div class="astat card"><p class="astat-label">Overdue</p><p class="astat-val text-red">{{ overdueBooks }}</p><p class="astat-sub">Need follow-up</p></div>
+        </div>
+        <div class="admin-tabs">
+          <button v-for="tab in tabs" :key="tab.id" :class="['tab', activeTab === tab.id ? 'tab--active' : '']" @click="activeTab = tab.id">{{ tab.label }}</button>
+        </div>
+        <div v-if="activeTab === 'books'">
+          <div class="section-actions"><h2>Book Inventory</h2><button class="btn btn-primary" @click="showAddBook = true">+ Add New Book</button></div>
+          <div class="admin-table card">
+            <div class="at-header"><span>Title / Author</span><span>Category</span><span>ISBN</span><span>Status</span><span>Actions</span></div>
+            <div v-for="book in store.books" :key="book.id" class="at-row">
+              <div class="at-book"><div class="at-thumb"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div><div><p class="at-title">{{ book.title }}</p><p class="at-author">{{ book.author }}</p></div></div>
+              <span class="badge badge-gold">{{ book.category }}</span>
+              <span class="at-isbn">{{ book.isbn }}</span>
+              <span :class="['badge', book.status === 'available' ? 'badge-green' : book.status === 'overdue' ? 'badge-red' : 'badge-gray']">{{ book.status }}</span>
+              <div class="at-actions"><button class="btn-icon" @click="editBook(book)">✏️</button><button class="btn-icon" @click="deleteBook(book.id)">🗑️</button></div>
+            </div>
+          </div>
+        </div>
+        <div v-if="activeTab === 'loans'">
+          <div class="section-actions"><h2>Active Loans</h2><div class="search-mini"><input v-model="loanSearch" type="text" placeholder="Search loans…" /></div></div>
+          <div class="admin-table card">
+            <div class="at-header at-header--loans"><span>Book</span><span>Borrower</span><span>Due Date</span><span>Status</span><span>Fine</span><span>Actions</span></div>
+            <div v-for="book in filteredLoans" :key="book.id" :class="['at-row', 'at-row--loans', book.status === 'overdue' ? 'row--overdue' : '']">
+              <p class="at-title">{{ book.title }}</p>
+              <span class="borrower-chip"><div class="borrower-av">JM</div><span>John Mensah</span></span>
+              <span :class="['due-txt', book.status === 'overdue' ? 'text-red' : '']">{{ formatDate(book.dueDate) }}</span>
+              <span :class="['badge', book.status === 'overdue' ? 'badge-red' : 'badge-green']">{{ book.status }}</span>
+              <span :class="book.fine ? 'text-red' : 'text-gray'" style="font-weight:700">{{ book.fine ? 'R' + book.fine.toFixed(2) : '—' }}</span>
+              <div class="at-actions"><button class="btn btn-outline btn-xs-a" @click="markReturned(book)">Mark Returned</button><button class="btn-ghost-xs" @click="store.renewBook(book.id)">Renew</button></div>
+            </div>
+            <div v-if="!filteredLoans.length" class="at-empty">No loans found.</div>
+          </div>
+        </div>
+        <div v-if="activeTab === 'reports'">
+          <h2 class="mb20">Library Reports</h2>
+          <div class="reports-grid">
+            <div class="report-card card"><h3>Category Distribution</h3><div class="cat-bars"><div v-for="cat in categoryStats" :key="cat.name" class="cat-bar-item"><div class="cat-bar-label"><span>{{ cat.name }}</span><span>{{ cat.count }}</span></div><div class="cat-bar-track"><div class="cat-bar-fill" :style="{ width: (cat.count / store.books.length * 100) + '%' }"></div></div></div></div></div>
+            <div class="report-card card"><h3>Status Overview</h3><div class="status-donut"><div v-for="s in statusStats" :key="s.label" class="status-row-r"><div class="status-dot" :style="{ background: s.color }"></div><span class="status-name">{{ s.label }}</span><div class="status-bar-track"><div class="status-bar-fill" :style="{ width: (s.count / store.books.length * 100) + '%', background: s.color }"></div></div><span class="status-cnt">{{ s.count }}</span></div></div></div>
+            <div class="report-card card report-card--full"><h3>Quick Statistics</h3><div class="quick-stats"><div class="qs-item"><span class="qs-label">Total Fines Outstanding</span><span class="qs-val text-red">R5.00</span></div><div class="qs-item"><span class="qs-label">Books Available Rate</span><span class="qs-val text-green">{{ Math.round(availableBooks / store.books.length * 100) }}%</span></div><div class="qs-item"><span class="qs-label">Active Reservations</span><span class="qs-val">{{ store.reservations.length }}</span></div><div class="qs-item"><span class="qs-label">Overdue Rate</span><span class="qs-val text-red">{{ Math.round(overdueBooks / store.books.length * 100) }}%</span></div></div></div>
+          </div>
+        </div>
+      </div>
+      <div v-if="showAddBook || editingBook" class="admin-modal-overlay" @click.self="closeModal">
+        <div class="admin-modal card">
+          <h2>{{ editingBook ? 'Edit Book' : 'Add New Book' }}</h2>
+          <form @submit.prevent="saveBook" class="admin-modal-form">
+            <div class="admin-field"><label>Title</label><input v-model="bookForm.title" type="text" required placeholder="Book title" /></div>
+            <div class="admin-field"><label>Author</label><input v-model="bookForm.author" type="text" required placeholder="Author name" /></div>
+            <div class="admin-field"><label>ISBN</label><input v-model="bookForm.isbn" type="text" required placeholder="978-0-XXXXXX-XX-X" /></div>
+            <div class="admin-field"><label>Category</label>
+              <select v-model="bookForm.category" required>
+                <option value="">Select category</option>
+                <option v-for="cat in store.getCategories()" :key="cat" :value="cat">{{ cat }}</option>
+                <option value="Mathematics">Mathematics</option>
+              </select>
+            </div>
+            <div class="admin-field"><label>Description</label><textarea v-model="bookForm.description" rows="3" placeholder="Book description…"></textarea></div>
+            <div class="modal-actions"><button type="button" class="btn btn-outline" @click="closeModal">Cancel</button><button type="submit" class="btn btn-primary">{{ editingBook ? 'Save Changes' : 'Add Book' }}</button></div>
+          </form>
+        </div>
+      </div>
+    </div>
+  `
+};
+
+// ===== ROUTER =====
+const routes = [
+  { path: '/', redirect: '/login' },
+  { path: '/login', component: LoginView, meta: { guest: true } },
+  { path: '/dashboard', component: DashboardView, meta: { auth: true } },
+  { path: '/search', component: SearchBooksView, meta: { auth: true } },
+  { path: '/book/:id', component: BookDetailView, meta: { auth: true } },
+  { path: '/loans', component: MyLoansView, meta: { auth: true } },
+  { path: '/reservations', component: ReservationsView, meta: { auth: true } },
+  { path: '/librarian', component: LibrarianView, meta: { auth: true, librarian: true } },
+];
+
+const router = createRouter({
+  history: createWebHashHistory(),
+  routes,
+  scrollBehavior() { return { top: 0 }; }
+});
+
+router.beforeEach((to, from, next) => {
+  if (to.meta.auth && !store.currentUser) return next('/login');
+  if (to.meta.guest && store.currentUser) return next('/dashboard');
+  if (to.meta.librarian && store.currentUser?.role !== 'librarian') return next('/dashboard');
+  next();
+});
+
+// ===== APP =====
+const App = {
+  components: { AppNavbar, NotificationToast },
+  setup() { return { store }; },
+  template: `
+    <div>
+      <AppNavbar v-if="store.currentUser" />
+      <div :class="store.currentUser ? 'main-layout' : ''">
+        <router-view />
+      </div>
+      <NotificationToast />
+    </div>
+  `
+};
+
+createApp(App).use(router).mount('#app');
+</script>
+</body>
 </html>
